@@ -24,6 +24,21 @@ import logging
 import time
 import requests
 
+from homeassistant.components.climate.const import (
+    HVAC_MODE_OFF,
+    HVAC_MODE_AUTO,
+    HVAC_MODE_COOL,
+    HVAC_MODE_DRY,
+    HVAC_MODE_HEAT,
+    HVAC_MODE_FAN_ONLY,
+    FAN_AUTO,
+    FAN_LOW,
+    FAN_MEDIUM,
+    FAN_HIGH,
+    SUPPORT_FAN_MODE,
+    SUPPORT_TARGET_TEMPERATURE
+)
+
 _LOGGER = logging.getLogger(__name__)
 
 APPVERSION = '4.3.1010'
@@ -43,18 +58,18 @@ LOCAL_DATA = """<?xml version="1.0" encoding="UTF-8"?>
 # ---------------------------------------------------------------
 
 MODE = {
-    'auto': 8,
-    'heat': 1,
-    'cool': 3,
-    'dry': 2,
-    'fan_only': 7
+    HVAC_MODE_AUTO: 8,
+    HVAC_MODE_HEAT: 1,
+    HVAC_MODE_COOL: 3,
+    HVAC_MODE_DRY: 2,
+    HVAC_MODE_FAN_ONLY: 7
 }
 
 FAN = {
-    'Auto': 0,
-    'Low': 2,
-    'Med': 3,
-    'High': 5
+    FAN_AUTO: 0,
+    FAN_LOW: 2,
+    FAN_MEDIUM: 3,
+    FAN_HIGH: 5
 }
 
 # ---------------------------------------------------------------

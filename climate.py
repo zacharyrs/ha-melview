@@ -23,10 +23,18 @@
 import logging
 
 from homeassistant.components.climate.const import (
+    HVAC_MODE_OFF,
+    HVAC_MODE_AUTO,
+    HVAC_MODE_COOL,
+    HVAC_MODE_DRY,
+    HVAC_MODE_HEAT,
+    HVAC_MODE_FAN_ONLY,
+    FAN_AUTO,
+    FAN_LOW,
+    FAN_MEDIUM,
+    FAN_HIGH,
     SUPPORT_FAN_MODE,
-    SUPPORT_ON_OFF,
-    SUPPORT_OPERATION_MODE,
-    SUPPORT_TARGET_TEMPERATURE,
+    SUPPORT_TARGET_TEMPERATURE
 )
 from homeassistant.components.climate import ClimateDevice
 from homeassistant.const import (
@@ -40,9 +48,13 @@ from homeassistant.const import (
 from .melview import MelViewAuthentication, MelView, MODE, FAN
 
 _LOGGER = logging.getLogger(__name__)
+
 DOMAIN = 'melview'
 REQUIREMENTS = ['requests']
 DEPENDENCIES = []
+
+HVAC_MODES = [HVAC_MODE_AUTO, HVAC_MODE_COOL, HVAC_MODE_DRY, HVAC_MODE_FAN_ONLY, HVAC_MODE_HEAT, HVAC_MODE_OFF]
+
 
 # ---------------------------------------------------------------
 
@@ -52,10 +64,10 @@ class MelViewClimate(ClimateDevice):
     def __init__(self, device):
         self._device = device
 
-        self._name = 'MelView {} ({})'.format(device.get_friendly_name(),
-                                              device.get_id())
+        self._name = 'MelView {}'.format(device.get_friendly_name())
+        self._unique_id = device.get_id()
 
-        self._operations_list = [x for x in MODE] + ['off']
+        self._operations_list = [x for x in MODE] + [HVAC_MODE_OFF]
         self._speeds_list = [x for x in FAN]
 
         self._precision = PRECISION_WHOLE
@@ -108,12 +120,18 @@ class MelViewClimate(ClimateDevice):
 
 
     @property
+    def unique_id(self):
+        """ Get unique_id for HASS
+        """
+        return self._unique_id
+
+
+    @property
     def supported_features(self):
         """ Let HASS know feature support
             TODO: Handle looking at the device features?
         """
-        return (SUPPORT_TARGET_TEMPERATURE | SUPPORT_FAN_MODE |
-                SUPPORT_OPERATION_MODE | SUPPORT_ON_OFF)
+        return (SUPPORT_TARGET_TEMPERATURE | SUPPORT_FAN_MODE)
 
 
     @property
@@ -190,28 +208,28 @@ class MelViewClimate(ClimateDevice):
 
 
     @property
-    def current_operation(self):
+    def hvac_mode(self):
         """ Get the current operating mode
         """
         return self._mode
 
 
     @property
-    def operation_list(self):
+    def hvac_modes(self):
         """ Get possible operating modes
         """
         return self._operations_list
 
 
     @property
-    def current_fan_mode(self):
+    def fan_mode(self):
         """ Check the unit fan speed
         """
         return self._speed
 
 
     @property
-    def fan_list(self):
+    def fan_modes(self):
         """ Get the possible fan speeds
         """
         return self._speeds_list
@@ -237,7 +255,7 @@ class MelViewClimate(ClimateDevice):
             self._state = self._mode
 
 
-    def set_operation_mode(self, mode):
+    def set_hvac_mode(self, mode):
         """ Set the operation mode
         """
         _LOGGER.debug('set mode: %s', mode)
