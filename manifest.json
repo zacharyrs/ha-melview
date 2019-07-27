@@ -1,0 +1,8 @@
+{
+  "domain": "melview",
+  "name": "MelView",
+  "documentation": "https://github.com/zacharyrs/ha-melview/",
+  "dependencies": [],
+  "codeowners": ["@zacharyrs"],
+  "requirements": ["requests"]
+}
