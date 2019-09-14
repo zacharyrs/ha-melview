@@ -155,7 +155,7 @@ class MelViewDevice:
                             json={'unitid': self._deviceid, 'v': APIVERSION})
         if req.status_code == 200:
             self._caps = req.json()
-            if self._localip:
+            if self._localip and 'localip' in self._caps:
                 self._localip = self._caps['localip']
             return True
         if req.status_code == 401 and retry:
@@ -278,7 +278,7 @@ class MelViewDevice:
         if not self._is_caps_valid():
             return False
 
-        return self._caps['halfdeg'] == 1
+        return 'halfdeg' in self._caps and self._caps['halfdeg'] == 1
 
 
     def get_temperature(self):
@@ -305,7 +305,7 @@ class MelViewDevice:
     def get_outside_temperature(self):
         """ Get current outside temperature.
         """
-        if self._caps['hasoutdoortemp'] == 0:
+        if not 'hasoutdoortemp' in self._caps or self._caps['hasoutdoortemp'] == 0:
             _LOGGER.error('outdoor temperature not supported')
             return 0
 
@@ -380,7 +380,7 @@ class MelViewDevice:
             if not self.power_on():
                 return False
 
-        if speed == 'Auto' and self._caps['hasautofan'] == 0:
+        if speed == 'Auto' and (not 'hasautofan' in self._caps or self._caps['hasautofan'] == 0):
             _LOGGER.error('fan speed auto not supported')
             return False
         if speed not in FAN.keys():
@@ -397,13 +397,13 @@ class MelViewDevice:
             if not self.power_on():
                 return False
 
-        if mode == 'Auto' and self._caps['hasautomode'] == 0:
+        if mode == 'Auto' and (not 'hasautomode' in self._caps or self._caps['hasautomode'] == 0):
             _LOGGER.error('auto mode not supported')
             return False
-        if mode == 'Dry' and self._caps['hasdrymode'] == 0:
+        if mode == 'Dry' and (not 'hasdrymode' in self._caps or self._caps['hasdrymode'] == 0):
             _LOGGER.error('dry mode not supported')
             return False
-        if mode != 'Cool' and self._caps['hascoolonly'] == 1:
+        if mode != 'Cool' and ('hascoolonly' in self._caps and self._caps['hascoolonly'] == 0):
             _LOGGER.error('only cool mode supported')
             return False
         if mode not in MODE.keys():
