@@ -41,7 +41,7 @@ from homeassistant.components.climate.const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-APPVERSION = '4.3.1010'
+APPVERSION = '4.3.1113'
 APIVERSION = 3
 HEADERS = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) ' \
     'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36'}
@@ -403,7 +403,7 @@ class MelViewDevice:
         if mode == 'Dry' and (not 'hasdrymode' in self._caps or self._caps['hasdrymode'] == 0):
             _LOGGER.error('dry mode not supported')
             return False
-        if mode != 'Cool' and ('hascoolonly' in self._caps and self._caps['hascoolonly'] == 0):
+        if mode != 'Cool' and ('hascoolonly' in self._caps and self._caps['hascoolonly'] == 1):
             _LOGGER.error('only cool mode supported')
             return False
         if mode not in MODE.keys():
