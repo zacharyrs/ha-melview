@@ -36,7 +36,7 @@ from homeassistant.components.climate.const import (
     SUPPORT_FAN_MODE,
     SUPPORT_TARGET_TEMPERATURE
 )
-from homeassistant.components.climate import ClimateDevice
+from homeassistant.components.climate import ClimateEntity
 from homeassistant.const import (
     ATTR_TEMPERATURE,
     PRECISION_HALVES,
@@ -58,7 +58,7 @@ HVAC_MODES = [HVAC_MODE_AUTO, HVAC_MODE_COOL, HVAC_MODE_DRY, HVAC_MODE_FAN_ONLY,
 
 # ---------------------------------------------------------------
 
-class MelViewClimate(ClimateDevice):
+class MelViewClimate(ClimateEntity):
     """ Melview handler for HomeAssistants
     """
     def __init__(self, device):
