@@ -29,10 +29,6 @@ from homeassistant.components.climate.const import (
     HVAC_MODE_DRY,
     HVAC_MODE_HEAT,
     HVAC_MODE_FAN_ONLY,
-    FAN_AUTO,
-    FAN_LOW,
-    FAN_MEDIUM,
-    FAN_HIGH,
     SUPPORT_FAN_MODE,
     SUPPORT_TARGET_TEMPERATURE
 )
@@ -45,7 +41,7 @@ from homeassistant.const import (
     TEMP_CELSIUS
 )
 
-from .melview import MelViewAuthentication, MelView, MODE, FAN
+from .melview import MelViewAuthentication, MelView, MODE
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -68,7 +64,7 @@ class MelViewClimate(ClimateEntity):
         self._unique_id = device.get_id()
 
         self._operations_list = [x for x in MODE] + [HVAC_MODE_OFF]
-        self._speeds_list = [x for x in FAN]
+        self._speeds_list = [x for x in self._device.fan_keyed]
 
         self._precision = PRECISION_WHOLE
         self._target_step = 1.0
