@@ -119,15 +119,24 @@ class MelViewAuthentication:
 
 # ---------------------------------------------------------------
 
+class MelViewZone:
+    def __init__(self, id, name, status):
+        self.id = id
+        self.name = name
+        self.status = status
+
+# ---------------------------------------------------------------
+
 class MelViewDevice:
     """ Handler class for a melview unit.
     """
 
-    def __init__(self, deviceid, buildingid, friendlyname,
+    def __init__(self, deviceid, buildingid, friendlyname, zones,
                  authentication, localcontrol=False):
         self._deviceid = deviceid
         self._buildingid = buildingid
         self._friendlyname = friendlyname
+        self._zones = zones
         self._authentication = authentication
 
         self._caps = None
@@ -185,6 +194,8 @@ class MelViewDevice:
                 self._otemp_list.append(float(self._json['outdoortemp']))
                 # Keep only last 10 temperature values.
                 self._otemp_list = self._otemp_list[-10:]
+            if 'zones' in self._json:
+                self._zones = self._json['zones']
             return True
         if req.status_code == 401 and retry:
             _LOGGER.error('info error 401 (trying to re-login)')
@@ -345,6 +356,11 @@ class MelViewDevice:
 
         return 'Auto'
 
+    def get_zone(self, zoneid):
+        return next((zone for zone in self.get_zones() if zone.id == zoneid), None)
+
+    def get_zones(self):
+        return map(lambda z: MelViewZone(z['zoneid'], z['name'], z['status']), self._zones)
 
     def is_power_on(self):
         """ Check unit is on.
@@ -411,6 +427,16 @@ class MelViewDevice:
             return False
         return self._send_command('MD{}'.format(MODE[mode]))
 
+    def enable_zone(self, zoneid):
+        """ Turn on a zone.
+        """
+        return self._send_command('Z' + str(zoneid) + '1')
+
+
+    def disable_zone(self, zoneid):
+        """ Turn off a zone.
+        """
+        return self._send_command('Z' + str(zoneid) + '0')
 
     def power_on(self):
         """ Turn on the unit.
@@ -448,9 +474,18 @@ class MelView:
             reply = req.json()
             for building in reply:
                 for unit in building['units']:
+                    zoneReq = requests.post('https://api.melview.net/api/unitcommand.aspx',
+                                        json={'unitid': unit['unitid']},
+                                        headers=HEADERS,
+                                        cookies=self._authentication.get_cookie())
+                    if zoneReq.status_code == 200:
+                        zoneReply = zoneReq.json()
+                        zones = zoneReply['zones'] if 'zones' in zoneReply else []
+
                     devices.append(MelViewDevice(unit['unitid'],
                                                  building['buildingid'],
                                                  unit['room'],
+                                                 zones,
                                                  self._authentication,
                                                  self._localcontrol))
 
