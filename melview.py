@@ -195,7 +195,7 @@ class MelViewDevice:
                 # Keep only last 10 temperature values.
                 self._otemp_list = self._otemp_list[-10:]
             if 'zones' in self._json:
-                self._zones = self._json['zones']
+                self._zones = {z['zoneid'] : MelViewZone(z['zoneid'], z['name'], z['status']) for z in self._json['zones']}
             return True
         if req.status_code == 401 and retry:
             _LOGGER.error('info error 401 (trying to re-login)')
@@ -357,10 +357,10 @@ class MelViewDevice:
         return 'Auto'
 
     def get_zone(self, zoneid):
-        return next((zone for zone in self.get_zones() if zone.id == zoneid), None)
+        return self._zones.get(zoneid)
 
     def get_zones(self):
-        return map(lambda z: MelViewZone(z['zoneid'], z['name'], z['status']), self._zones)
+        return self._zones.values()
 
     def is_power_on(self):
         """ Check unit is on.
@@ -436,7 +436,7 @@ class MelViewDevice:
     def disable_zone(self, zoneid):
         """ Turn off a zone.
         """
-        return self._send_command(f"z{zoneid}0")
+        return self._send_command(f"Z{zoneid}0")
 
     def power_on(self):
         """ Turn on the unit.
