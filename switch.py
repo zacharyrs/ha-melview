@@ -3,6 +3,9 @@ from .melview import MelViewAuthentication, MelView
 from homeassistant.components.switch import SwitchEntity
 
 _LOGGER = logging.getLogger(__name__)
+DOMAIN = 'melview'
+REQUIREMENTS = ['requests']
+DEPENDENCIES = []
 
 class MelViewZoneSwitch(SwitchEntity):
     """ Melview zone switch handler for HomeAssistants
