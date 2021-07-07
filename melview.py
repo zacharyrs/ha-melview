@@ -131,12 +131,11 @@ class MelViewDevice:
     """ Handler class for a melview unit.
     """
 
-    def __init__(self, deviceid, buildingid, friendlyname, zones,
+    def __init__(self, deviceid, buildingid, friendlyname,
                  authentication, localcontrol=False):
         self._deviceid = deviceid
         self._buildingid = buildingid
         self._friendlyname = friendlyname
-        self._zones = zones
         self._authentication = authentication
 
         self._caps = None
@@ -146,6 +145,7 @@ class MelViewDevice:
         self._json = None
         self._rtemp_list = []
         self._otemp_list = []
+        self._zones = {}
 
         self._refresh_device_caps()
         self._refresh_device_info()
@@ -430,13 +430,13 @@ class MelViewDevice:
     def enable_zone(self, zoneid):
         """ Turn on a zone.
         """
-        return self._send_command('Z' + str(zoneid) + '1')
+        return self._send_command(f"Z{zoneid}1")
 
 
     def disable_zone(self, zoneid):
         """ Turn off a zone.
         """
-        return self._send_command('Z' + str(zoneid) + '0')
+        return self._send_command(f"z{zoneid}0")
 
     def power_on(self):
         """ Turn on the unit.
@@ -474,18 +474,9 @@ class MelView:
             reply = req.json()
             for building in reply:
                 for unit in building['units']:
-                    zoneReq = requests.post('https://api.melview.net/api/unitcommand.aspx',
-                                        json={'unitid': unit['unitid']},
-                                        headers=HEADERS,
-                                        cookies=self._authentication.get_cookie())
-                    if zoneReq.status_code == 200:
-                        zoneReply = zoneReq.json()
-                        zones = zoneReply['zones'] if 'zones' in zoneReply else []
-
                     devices.append(MelViewDevice(unit['unitid'],
                                                  building['buildingid'],
                                                  unit['room'],
-                                                 zones,
                                                  self._authentication,
                                                  self._localcontrol))
 

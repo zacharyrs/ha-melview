@@ -23,13 +23,13 @@ class MelViewZoneSwitch(SwitchEntity):
     def name(self):
         """ Diplay name for HASS
         """
-        return self._name + " AC Zone"
+        return f"{self._name} AC Zone"
 
     @property
     def unique_id(self):
         """ Get unique_id for HASS
         """
-        return self._climate.get_id() + "-" + str(self._id)
+        return f"{self._climate.get_id()}-{self._id}"
 
     @property
     def should_poll(self):
