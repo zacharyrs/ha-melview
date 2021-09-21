@@ -113,6 +113,13 @@ class MelViewAuthentication:
 
 # ---------------------------------------------------------------
 
+class MelViewZone:
+    def __init__(self, id, name, status):
+        self.id = id
+        self.name = name
+        self.status = status
+
+# ---------------------------------------------------------------
 
 class MelViewDevice:
     """ Handler class for a melview unit.
@@ -132,6 +139,7 @@ class MelViewDevice:
         self._json = None
         self._rtemp_list = []
         self._otemp_list = []
+        self._zones = {}
 
         self.fan = FANSTAGES[3]
 
@@ -184,6 +192,8 @@ class MelViewDevice:
                 self._otemp_list.append(float(self._json['outdoortemp']))
                 # Keep only last 10 temperature values.
                 self._otemp_list = self._otemp_list[-10:]
+            if 'zones' in self._json:
+                self._zones = {z['zoneid'] : MelViewZone(z['zoneid'], z['name'], z['status']) for z in self._json['zones']}
             return True
         if req.status_code == 401 and retry:
             _LOGGER.error('info error 401 (trying to re-login)')
@@ -331,6 +341,12 @@ class MelViewDevice:
 
         return 'Auto'
 
+    def get_zone(self, zoneid):
+        return self._zones.get(zoneid)
+
+    def get_zones(self):
+        return self._zones.values()
+
     def is_power_on(self):
         """ Check unit is on.
         """
@@ -389,6 +405,17 @@ class MelViewDevice:
             _LOGGER.error('mode %d not supported', mode)
             return False
         return self._send_command('MD{}'.format(MODE[mode]))
+
+    def enable_zone(self, zoneid):
+        """ Turn on a zone.
+        """
+        return self._send_command(f"Z{zoneid}1")
+
+
+    def disable_zone(self, zoneid):
+        """ Turn off a zone.
+        """
+        return self._send_command(f"Z{zoneid}0")
 
     def power_on(self):
         """ Turn on the unit.
