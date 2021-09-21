@@ -1,8 +1,11 @@
 {
   "domain": "melview",
   "name": "MelView",
+  "version": "1.0.0",
   "documentation": "https://github.com/zacharyrs/ha-melview/",
+  "issue_tracker": "https://github.com/zacharyrs/ha-melview/issues",
   "dependencies": [],
   "codeowners": ["@zacharyrs"],
-  "requirements": ["requests"]
+  "requirements": ["requests"],
+  "iot_class": "cloud_polling"
 }
