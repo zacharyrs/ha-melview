@@ -30,21 +30,15 @@ from homeassistant.components.climate.const import (
     HVAC_MODE_COOL,
     HVAC_MODE_DRY,
     HVAC_MODE_HEAT,
-    HVAC_MODE_FAN_ONLY,
-    FAN_AUTO,
-    FAN_LOW,
-    FAN_MEDIUM,
-    FAN_HIGH,
-    SUPPORT_FAN_MODE,
-    SUPPORT_TARGET_TEMPERATURE
+    HVAC_MODE_FAN_ONLY
 )
 
 _LOGGER = logging.getLogger(__name__)
 
 APPVERSION = '5.3.1330'
 APIVERSION = 3
-HEADERS = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) ' \
-    'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36'}
+HEADERS = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) '
+           'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36'}
 
 LOCAL_DATA = """<?xml version="1.0" encoding="UTF-8"?>
 <CSV>
@@ -65,29 +59,30 @@ MODE = {
     HVAC_MODE_FAN_ONLY: 7
 }
 
-FAN = {
-    FAN_AUTO: 0,
-    FAN_LOW: 2,
-    FAN_MEDIUM: 3,
-    FAN_HIGH: 5
+FANSTAGES = {
+    1: {5: "On"},
+    2: {2: "Low", 5: "High"},
+    3: {2: "Low", 3: "Medium", 5: "High"},
+    4: {2: "Low", 3: "Medium Low", 5: "Medium High", 6: "High"},
+    5: {1: "Low", 2: "Medium Low", 3: "Medium", 5: "Medium High", 6: "High"},
 }
 
 # ---------------------------------------------------------------
 
+
 class MelViewAuthentication:
     """ Implementation to remember and refresh melview cookies.
     """
+
     def __init__(self, email, password):
         self._email = email
         self._password = password
         self._cookie = None
 
-
     def is_login(self):
         """ Return login status.
         """
         return self._cookie is not None
-
 
     def login(self):
         """ Generate a new login cookie.
@@ -110,7 +105,6 @@ class MelViewAuthentication:
             _LOGGER.error('login status code: %d', req.status_code)
 
         return False
-
 
     def get_cookie(self):
         """ Return authentication cookie.
@@ -141,19 +135,19 @@ class MelViewDevice:
         self._caps = None
         self._localip = localcontrol
 
-        self._info_lease_seconds = 30 # Data lasts for 30s.
+        self._info_lease_seconds = 30  # Data lasts for 30s.
         self._json = None
         self._rtemp_list = []
         self._otemp_list = []
         self._zones = {}
 
+        self.fan = FANSTAGES[3]
+
         self._refresh_device_caps()
         self._refresh_device_info()
 
-
     def __str__(self):
         return str(self._json)
-
 
     def _refresh_device_caps(self, retry=True):
         self._json = None
@@ -166,16 +160,20 @@ class MelViewDevice:
             self._caps = req.json()
             if self._localip and 'localip' in self._caps:
                 self._localip = self._caps['localip']
+            if self._caps['fanstage']:
+                self.fan = FANSTAGES[self._caps['fanstage']]
+            if 'hasautofan' in self._caps and self._caps['hasautofan'] == 1:
+                self.fan[0] = 'auto'
+            self.fan_keyed = {value: key for key, value in self.fan.items()}
             return True
         if req.status_code == 401 and retry:
             _LOGGER.error('caps error 401 (trying to re-login)')
             if self._authentication.login():
                 return self._refresh_device_caps(retry=False)
         else:
-            _LOGGER.error('unable to retrieve caps ' \
-                '(invalid status code: %d)', req.status_code)
+            _LOGGER.error('unable to retrieve caps '
+                          '(invalid status code: %d)', req.status_code)
         return False
-
 
     def _refresh_device_info(self, retry=True):
         self._json = None
@@ -206,7 +204,6 @@ class MelViewDevice:
                           req.status_code)
         return False
 
-
     def _is_info_valid(self):
         if self._json is None:
             return self._refresh_device_info()
@@ -217,13 +214,11 @@ class MelViewDevice:
 
         return True
 
-
     def _is_caps_valid(self):
         if self._caps is None:
             return self._refresh_device_caps()
 
         return True
-
 
     def _send_command(self, command, retry=True):
         _LOGGER.debug('command issued %s', command)
@@ -263,25 +258,21 @@ class MelViewDevice:
 
         return False
 
-    
     def force_update(self):
         """ Force info refresh
         """
 
         return self._refresh_device_info()
 
-
     def get_id(self):
         """ Get device ID.
         """
         return self._deviceid
 
-
     def get_friendly_name(self):
         """ Get customised device name.
         """
         return self._friendlyname
-
 
     def get_precision_halves(self):
         """ Get unit support for half degrees.
@@ -291,7 +282,6 @@ class MelViewDevice:
 
         return 'halfdeg' in self._caps and self._caps['halfdeg'] == 1
 
-
     def get_temperature(self):
         """ Get set temperature.
         """
@@ -300,7 +290,6 @@ class MelViewDevice:
 
         return float(self._json['settemp'])
 
-
     def get_room_temperature(self):
         """ Get current room temperature.
         """
@@ -308,10 +297,9 @@ class MelViewDevice:
             return 0
 
         if not self._rtemp_list:
-            return 0 # Avoid div 0.
+            return 0  # Avoid div 0.
 
         return round(sum(self._rtemp_list) / len(self._rtemp_list), 1)
-
 
     def get_outside_temperature(self):
         """ Get current outside temperature.
@@ -324,10 +312,9 @@ class MelViewDevice:
             return 0
 
         if not self._otemp_list:
-            return 0 # Avoid div 0.
+            return 0  # Avoid div 0.
 
         return round((sum(self._otemp_list) / len(self._otemp_list)), 1)
-
 
     def get_speed(self):
         """ Get the set fan speed.
@@ -335,13 +322,11 @@ class MelViewDevice:
         if not self._is_info_valid():
             return 'Auto'
 
-        for key, val in FAN.items():
+        for key, val in self.fan_keyed.items():
             if self._json['setfan'] == val:
                 return key
 
         return 'Auto'
-
-
 
     def get_mode(self):
         """ Get the set mode.
@@ -370,7 +355,6 @@ class MelViewDevice:
 
         return self._json['power']
 
-
     def set_temperature(self, temperature):
         """ Set the target temperature.
         """
@@ -387,7 +371,6 @@ class MelViewDevice:
             return False
         return self._send_command('TS{:.2f}'.format(temperature))
 
-
     def set_speed(self, speed):
         """ Set the fan speed.
         """
@@ -396,14 +379,10 @@ class MelViewDevice:
             if not self.power_on():
                 return False
 
-        if speed == 'Auto' and (not 'hasautofan' in self._caps or self._caps['hasautofan'] == 0):
-            _LOGGER.error('fan speed auto not supported')
-            return False
-        if speed not in FAN.keys():
+        if speed not in self.fan_keyed.keys():
             _LOGGER.error('fan speed %d not supported', speed)
             return False
-        return self._send_command('FS{:.2f}'.format(FAN[speed]))
-
+        return self._send_command('FS{:.2f}'.format(self.fan_keyed[speed]))
 
     def set_mode(self, mode):
         """ Set operating mode.
@@ -443,7 +422,6 @@ class MelViewDevice:
         """
         return self._send_command('PW1')
 
-
     def power_off(self):
         """ Turn off the unit.
         """
@@ -451,15 +429,16 @@ class MelViewDevice:
 
 # ---------------------------------------------------------------
 
+
 class MelView:
     """ Handler for multiple melview devices under one user.
     """
+
     def __init__(self, authentication, localcontrol=False):
         self._authentication = authentication
         self._unitcount = 0
 
         self._localcontrol = localcontrol
-
 
     def get_devices_list(self, retry=True):
         """ Return all the devices found, as handlers.
